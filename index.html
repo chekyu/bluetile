@@ -68,6 +68,32 @@
   .asof b{color:var(--ink-2); font-weight:500}
   .src{font-size:12px; color:var(--muted); opacity:.85}
 
+  /* ---- 로딩 / 오류 상태 ---- */
+  .state{
+    margin-top:48px; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:48px 28px; text-align:center; box-shadow:var(--shadow);
+  }
+  .state h3{
+    font-family:"Gowun Batang",serif; font-weight:700; font-size:19px;
+    margin:0 0 8px; color:var(--ink);
+  }
+  .state p{margin:0; color:var(--muted); font-size:14px; line-height:1.7}
+  .state.err h3{color:var(--alert)}
+  .spinner{
+    width:22px; height:22px; margin:0 auto 18px; border-radius:50%;
+    border:2px solid var(--line-2); border-top-color:var(--accent);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){ .spinner{animation:none} }
+  .retry{
+    margin-top:20px; font:inherit; font-size:13.5px; font-weight:500;
+    color:var(--surface); background:var(--accent); border:0;
+    padding:9px 20px; border-radius:6px; cursor:pointer;
+  }
+  .retry:hover{filter:brightness(1.08)}
+  .retry:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+
   /* ---- sections ---- */
   section{margin-top:44px}
   h2{
@@ -182,11 +208,24 @@
   <div class="wrap">
     <p class="eyebrow">청기와빌라 관리비</p>
     <h1>2026년 관리비 현황</h1>
-    <p class="asof">기준일 <b id="asof"></b> · 세대당 월 관리비 <b>15,000원</b> · 11세대<br><span class="src">데이터 <span id="src">불러오는 중…</span></span></p>
+    <p class="asof">기준일 <b id="asof">—</b> · 세대당 월 관리비 <b>15,000원</b> · 11세대<br><span class="src">데이터 <span id="src">불러오는 중…</span></span></p>
   </div>
 </header>
 
-<div class="wrap">
+<div class="wrap" id="state">
+  <div class="state" id="loading">
+    <div class="spinner"></div>
+    <h3>관리비 내역을 불러오는 중입니다</h3>
+    <p>잠시만 기다려 주세요.</p>
+  </div>
+  <div class="state err" id="failed" hidden>
+    <h3>지금은 내역을 불러올 수 없습니다</h3>
+    <p>연결이 원활하지 않거나 자료를 준비 중일 수 있습니다.<br>잠시 후 다시 시도해 주세요.</p>
+    <button class="retry" type="button" id="retry">다시 시도</button>
+  </div>
+</div>
+
+<div class="wrap" id="content" hidden>
 
   <section style="margin-top:0">
     <dl class="kpis" id="kpis"></dl>
@@ -251,7 +290,7 @@
 <div id="tip"></div>
 
 <script>
-let D = {};
+let D = null;   // null 이면 웹앱에서 받아온다
 const won = n => n.toLocaleString('ko-KR');
 const $ = id => document.getElementById(id);
 
@@ -334,32 +373,46 @@ $('ledger').innerHTML =
 $('ledgerToggle').textContent = `전체 내역 ${D.ledger.length}건 펼치기`;
 
 }
-render();
 
 /* ------------------------------------------------------------------
-   데이터 출처 (위에서부터 순서대로 시도, 하나라도 성공하면 그 값으로 갱신)
-     1) SHEET_API  구글시트 Apps Script 웹앱 — 항상 최신. 아래에 /exec 주소를 넣으면 활성화
-     2) data.json  같은 폴더의 파일 — 시트에서 깃허브로 배포한 경우
-     3) 내장 데이터 — 둘 다 실패해도 화면은 그대로 뜬다
+   데이터는 구글시트 Apps Script 웹앱에서만 가져온다.
+   불러오지 못하면 아무 수치도 보여주지 않는다 (오래된 값 노출 방지).
    ------------------------------------------------------------------ */
 const SHEET_API = 'https://script.google.com/macros/s/AKfycbybG8fHsF_lEiaJsfBvvOkyMC_GT4o23vOXndxZUPZTdSHie98/exec';
 
-(async () => {
-  const status = $('src');
-  for (const [url, label] of [[SHEET_API, '구글시트 실시간'], ['data.json', '저장된 데이터']]) {
-    if (!url) continue;
-    try {
-      const r = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now());
-      if (!r.ok) continue;
-      const d = await r.json();
-      if (!d || !d.grid) continue;
-      D = d; render();
-      status.textContent = label + ' · ' + d.asof.replace(/-/g, '.');
-      return;
-    } catch (e) { /* 다음 출처로 */ }
+async function load(){
+  $('failed').hidden = true;
+  $('loading').hidden = false;
+  $('content').hidden = true;
+  try{
+    if(!SHEET_API) throw new Error('SHEET_API 미설정');
+    const r = await fetch(SHEET_API + (SHEET_API.includes('?') ? '&' : '?') + 't=' + Date.now());
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    if(!d || !Array.isArray(d.grid) || !d.grid.length) throw new Error('빈 응답');
+    D = d;
+    render();
+    $('src').textContent = d.asof.replace(/-/g,'.') + ' 기준';
+    $('state').hidden = true;
+    $('content').hidden = false;
+  }catch(e){
+    D = null;
+    $('loading').hidden = true;
+    $('failed').hidden = false;
+    $('src').textContent = '불러오지 못함';
   }
-  status.textContent = '내장 데이터';
-})();
+}
+$('retry').addEventListener('click', load);
+
+if (D && Array.isArray(D.grid) && D.grid.length) {
+  // 미리보기 빌드: 데이터가 내장된 경우 그대로 그린다
+  render();
+  $('src').textContent = D.asof.replace(/-/g,'.') + ' 기준 (미리보기)';
+  $('state').hidden = true;
+  $('content').hidden = false;
+} else {
+  load();
+}
 
 /* 툴팁 */
 const tip = $('tip');
