@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>청기와빌라 관리비 현황</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
+
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --surface-2:#EFF3F1;
+    --ink:#111C1A; --ink-2:#3D4E4A; --muted:#6C7D79;
+    --line:#DFE6E3; --line-2:#C9D4D0;
+    --accent:#00958A; --accent-soft:#D8EEEB; --accent-ink:#00655E;
+    --alert:#C2410C; --alert-soft:#FAE3D8; --alert-ink:#9A3309;
+    --idle:#E7ECEA;
+    --shadow:0 1px 2px rgba(17,28,26,.05), 0 8px 24px -16px rgba(17,28,26,.25);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#101513; --surface:#181E1C; --surface-2:#1F2724;
+      --ink:#E9EFEC; --ink-2:#C0CCC8; --muted:#8B9C97;
+      --line:#28322F; --line-2:#374340;
+      --accent:#17A897; --accent-soft:#123430; --accent-ink:#5FD3C4;
+      --alert:#D9773F; --alert-soft:#3A2318; --alert-ink:#EFA274;
+      --idle:#212927;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#101513; --surface:#181E1C; --surface-2:#1F2724;
+    --ink:#E9EFEC; --ink-2:#C0CCC8; --muted:#8B9C97;
+    --line:#28322F; --line-2:#374340;
+    --accent:#17A897; --accent-soft:#123430; --accent-ink:#5FD3C4;
+    --alert:#D9773F; --alert-soft:#3A2318; --alert-ink:#EFA274;
+    --idle:#212927;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    font-weight:400; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px 96px}
+  header .wrap{padding-bottom:0}
+
+  /* ---- header ---- */
+  header{
+    border-bottom:1px solid var(--line); background:var(--surface);
+    padding:36px 0 28px; margin-bottom:32px;
+  }
+  .eyebrow{
+    font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--accent-ink); font-weight:600; margin:0 0 10px;
+  }
+  h1{
+    font-family:"Gowun Batang","Apple SD Gothic Neo",serif; font-weight:700;
+    font-size:clamp(28px,4.4vw,40px); line-height:1.2; margin:0 0 12px;
+    text-wrap:balance; letter-spacing:-.01em;
+  }
+  .asof{color:var(--muted); font-size:14px; margin:0}
+  .asof b{color:var(--ink-2); font-weight:500}
+  .src{font-size:12px; color:var(--muted); opacity:.85}
+
+  /* ---- sections ---- */
+  section{margin-top:44px}
+  h2{
+    font-family:"Gowun Batang",serif; font-weight:700; font-size:20px;
+    margin:0 0 4px; letter-spacing:-.01em;
+  }
+  .sub{color:var(--muted); font-size:13.5px; margin:0 0 18px}
+  .card{
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:22px; box-shadow:var(--shadow);
+  }
+
+  /* ---- kpi ---- */
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px}
+  .kpi{background:var(--surface); border:1px solid var(--line); border-radius:10px;
+       padding:18px 20px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .kpi::before{content:""; position:absolute; inset:0 auto 0 0; width:3px; background:var(--line-2)}
+  .kpi.is-accent::before{background:var(--accent)}
+  .kpi.is-alert::before{background:var(--alert)}
+  .kpi dt{font-size:12.5px; color:var(--muted); margin:0 0 6px; letter-spacing:.02em}
+  .kpi dd{margin:0; font-size:26px; font-weight:500; letter-spacing:-.02em}
+  .kpi .foot{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.45}
+  .kpi.is-alert dd{color:var(--alert)}
+
+  /* ---- payment grid ---- */
+  .scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+  table.grid{border-collapse:separate; border-spacing:2px; font-size:12.5px; min-width:760px}
+  table.grid th{font-weight:500; color:var(--muted); font-size:11.5px; padding:2px 4px; text-align:center}
+  table.grid th.unit{
+    text-align:left; color:var(--ink); font-weight:600; font-size:13px;
+    position:sticky; left:0; background:var(--surface); padding-right:12px; z-index:2;
+  }
+  table.grid td{
+    text-align:center; padding:7px 4px; border-radius:4px; min-width:50px;
+    font-family:"IBM Plex Mono",monospace; font-size:11px; font-variant-numeric:tabular-nums;
+  }
+  td.paid{background:var(--accent-soft); color:var(--accent-ink)}
+  td.unpaid{background:var(--alert-soft); color:var(--alert-ink); font-family:inherit; font-size:11.5px}
+  td.idle{background:var(--idle); color:var(--muted)}
+  td.owed{
+    font-family:"IBM Plex Mono",monospace; font-size:12px; text-align:right;
+    padding-right:8px; background:transparent; font-weight:500;
+  }
+  td.owed.has{color:var(--alert)}
+  td.owed.zero{color:var(--muted)}
+  .legend{display:flex; flex-wrap:wrap; gap:16px; margin-top:14px; font-size:12.5px; color:var(--ink-2)}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .swatch{width:12px; height:12px; border-radius:3px; display:inline-block}
+
+  /* ---- bar lists ---- */
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:20px}
+  @media (max-width:760px){ .two{grid-template-columns:1fr} }
+  .bars{display:flex; flex-direction:column; gap:11px; margin-top:4px}
+  .bar-row{display:grid; grid-template-columns:56px 1fr auto; align-items:center; gap:12px}
+  .bar-row .lbl{font-size:13px; color:var(--ink-2); font-weight:500}
+  .track{height:14px; background:var(--surface-2); border-radius:4px; overflow:hidden}
+  .fill{height:100%; border-radius:0 4px 4px 0; transition:width .5s ease}
+  .bar-row .val{font-family:"IBM Plex Mono",monospace; font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--ink-2)}
+  .bar-row.zero .val{color:var(--muted)}
+
+  /* ---- monthly chart ---- */
+  .chart{display:flex; gap:10px; align-items:flex-end; height:200px; margin-top:8px; padding-top:8px}
+  .mcol{flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%}
+  .mbars{flex:1; display:flex; align-items:flex-end; gap:2px; width:100%; justify-content:center}
+  .mbar{width:46%; max-width:26px; border-radius:4px 4px 0 0; min-height:2px; transition:height .5s ease}
+  .mbar.in{background:var(--accent)}
+  .mbar.out{background:var(--alert)}
+  .mlab{font-size:11.5px; color:var(--muted); font-family:"IBM Plex Mono",monospace}
+  .gridline{border-top:1px dashed var(--line-2); font-size:11px; color:var(--muted); padding-top:2px}
+
+  /* ---- ledger ---- */
+  details{margin-top:14px}
+  summary{
+    cursor:pointer; font-size:13.5px; color:var(--accent-ink); font-weight:500;
+    padding:10px 0; list-style:none; display:flex; align-items:center; gap:8px;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸"; transition:transform .2s}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:4px}
+  table.ledger{width:100%; border-collapse:collapse; font-size:12.5px; min-width:560px}
+  table.ledger th{
+    text-align:left; font-weight:500; color:var(--muted); font-size:11.5px;
+    padding:8px 10px; border-bottom:1px solid var(--line-2); white-space:nowrap;
+  }
+  table.ledger td{padding:7px 10px; border-bottom:1px solid var(--line); white-space:nowrap}
+  table.ledger td.r{text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+  td.plus{color:var(--accent-ink)}
+  td.minus{color:var(--alert)}
+  .tag{
+    display:inline-block; font-size:11px; padding:1.5px 7px; border-radius:99px;
+    background:var(--surface-2); color:var(--ink-2);
+  }
+
+  footer{
+    margin-top:56px; padding-top:20px; border-top:1px solid var(--line);
+    font-size:12px; color:var(--muted); line-height:1.7;
+  }
+
+  #tip{
+    position:fixed; pointer-events:none; opacity:0; transition:opacity .12s;
+    background:var(--ink); color:var(--bg); font-size:12px; padding:6px 9px;
+    border-radius:5px; z-index:50; white-space:nowrap;
+    font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
+
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <p class="eyebrow">청기와빌라 관리비</p>
+    <h1>2026년 관리비 현황</h1>
+    <p class="asof">기준일 <b id="asof"></b> · 세대당 월 관리비 <b>15,000원</b> · 11세대<br><span class="src">데이터 <span id="src">불러오는 중…</span></span></p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section style="margin-top:0">
+    <dl class="kpis" id="kpis"></dl>
+  </section>
+
+  <section>
+    <h2>세대별 납부 현황</h2>
+    <p class="sub">칸의 숫자는 입금이 확인된 날짜입니다. 입금액은 밀린 달부터 순서대로 채워집니다.</p>
+    <div class="card">
+      <div class="scroll"><table class="grid" id="grid"></table></div>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--accent-soft);border:1px solid var(--accent)"></i>납부 완료</span>
+        <span><i class="swatch" style="background:var(--alert-soft);border:1px solid var(--alert)"></i>미납</span>
+        <span><i class="swatch" style="background:var(--idle);border:1px solid var(--line-2)"></i>납부월 도래 전</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div>
+      <h2>세대별 미납액</h2>
+      <p class="sub">이전 연도 이월분을 포함한 금액입니다.</p>
+      <div class="card"><div class="bars" id="dueBars"></div></div>
+    </div>
+    <div>
+      <h2>지출 구성</h2>
+      <p class="sub">1월 ~ 8월 누계.</p>
+      <div class="card"><div class="bars" id="catBars"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>월별 수입 · 지출</h2>
+    <p class="sub">청소비는 두 달치를 한 번에 내보내기 때문에 홀수 달마다 큰 지출이 잡힙니다.</p>
+    <div class="card">
+      <div class="legend" style="margin:0 0 10px">
+        <span><i class="swatch" style="background:var(--accent)"></i>수입</span>
+        <span><i class="swatch" style="background:var(--alert)"></i>지출</span>
+      </div>
+      <div class="chart" id="chart"></div>
+      <div class="gridline" id="scaleNote"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>거래 내역</h2>
+    <p class="sub">통장에 찍힌 그대로입니다. 입금자 이름 대신 호수로 표시했습니다.</p>
+    <div class="card">
+      <details>
+        <summary id="ledgerToggle">전체 내역 펼치기</summary>
+        <div class="scroll"><table class="ledger" id="ledger"></table></div>
+      </details>
+    </div>
+  </section>
+
+  <footer>
+    본 페이지는 청기와빌라 입주 세대 안내용입니다. 개인 연락처와 계좌번호는 포함하지 않으며, 입금자명은 호수로 대체했습니다.<br>
+    금액에 이견이 있으면 총무에게 알려주세요.
+  </footer>
+</div>
+
+<div id="tip"></div>
+
+<script>
+let D = {};
+const won = n => n.toLocaleString('ko-KR');
+const $ = id => document.getElementById(id);
+
+function render(){
+/* 기준일 */
+const [Y,M,DD] = D.asof.split('-').map(Number);
+$('asof').textContent = `${Y}년 ${M}월 ${DD}일`;
+const curMon = M;
+
+/* KPI */
+const net = D.income - D.expense;
+$('kpis').innerHTML = [
+  {t:'통장 잔액', v:won(D.balance)+'원', f:`은행 잔액과 일치 확인`, c:'is-accent'},
+  {t:'1~8월 수입', v:won(D.income)+'원', f:'관리비 · 예금이자'},
+  {t:'1~8월 지출', v:won(D.expense)+'원', f:'청소비 · 정화조 · 전기세'},
+  {t:'미납 총액', v:won(D.due)+'원', f:'이월분 포함', c:'is-alert'}
+].map(k=>`<div class="kpi ${k.c||''}"><dt>${k.t}</dt><dd class="num">${k.v}</dd><div class="foot">${k.f}</div></div>`).join('');
+
+/* 납부 그리드 */
+let head = '<thead><tr><th class="unit">호수</th>';
+for(let m=1;m<=12;m++) head += `<th>${m}월</th>`;
+head += '<th style="text-align:right;padding-right:8px">미납액</th></tr></thead>';
+let body = '<tbody>';
+D.grid.forEach(g=>{
+  body += `<tr><th class="unit">${g.u}</th>`;
+  g.cells.forEach((c,i)=>{
+    const m = i+1;
+    if(c) body += `<td class="paid" data-tip="${g.u} ${m}월 · ${c} 입금">${c}</td>`;
+    else if(m<=curMon) body += `<td class="unpaid" data-tip="${g.u} ${m}월 · 미납">미납</td>`;
+    else body += `<td class="idle" data-tip="${g.u} ${m}월 · 아직 납부월이 아닙니다">·</td>`;
+  });
+  body += `<td class="owed ${g.due?'has':'zero'}">${g.due?won(g.due):'—'}</td></tr>`;
+});
+$('grid').innerHTML = head + body + '</tbody>';
+
+/* 미납 막대 */
+const dues = D.grid.map(g=>({k:g.u, v:g.due})).sort((a,b)=>b.v-a.v);
+const dMax = Math.max(...dues.map(d=>d.v), 1);
+$('dueBars').innerHTML = dues.map(d=>`
+  <div class="bar-row ${d.v?'':'zero'}">
+    <div class="lbl">${d.k}</div>
+    <div class="track"><div class="fill" style="width:${(d.v/dMax*100).toFixed(1)}%;background:var(--alert)"
+      data-tip="${d.k} · 미납 ${won(d.v)}원"></div></div>
+    <div class="val">${d.v?won(d.v):'완납'}</div>
+  </div>`).join('');
+
+/* 지출 구성 */
+const cats = Object.entries(D.bycat).sort((a,b)=>b[1]-a[1]);
+const cMax = Math.max(...cats.map(c=>c[1]));
+$('catBars').innerHTML = cats.map(([k,v])=>`
+  <div class="bar-row">
+    <div class="lbl">${k}</div>
+    <div class="track"><div class="fill" style="width:${(v/cMax*100).toFixed(1)}%;background:var(--alert)"
+      data-tip="${k} · ${won(v)}원 (${(v/D.expense*100).toFixed(0)}%)"></div></div>
+    <div class="val">${won(v)}</div>
+  </div>`).join('');
+
+/* 월별 차트 */
+const mMax = Math.max(...D.monthly.flatMap(m=>[m.in,m.out]));
+$('chart').innerHTML = D.monthly.map(m=>`
+  <div class="mcol">
+    <div class="mbars">
+      <div class="mbar in"  style="height:${(m.in/mMax*100).toFixed(1)}%"  data-tip="${m.m}월 수입 ${won(m.in)}원"></div>
+      <div class="mbar out" style="height:${(m.out/mMax*100).toFixed(1)}%" data-tip="${m.m}월 지출 ${won(m.out)}원"></div>
+    </div>
+    <div class="mlab">${m.m}월</div>
+  </div>`).join('');
+$('scaleNote').textContent = `세로 기준 최대 ${won(mMax)}원 · 8개월 누적 ${net<0?'적자':'흑자'} ${won(Math.abs(net))}원`;
+
+/* 거래 내역 */
+$('ledger').innerHTML =
+  '<thead><tr><th>날짜</th><th>구분</th><th>내용</th><th class="r" style="text-align:right">금액</th><th class="r" style="text-align:right">잔액</th></tr></thead><tbody>' +
+  D.ledger.map(x=>`<tr>
+    <td class="num">${x.d.slice(5).replace('-','.')}</td>
+    <td><span class="tag">${x.c}</span></td>
+    <td>${x.m}</td>
+    <td class="r ${x.a>0?'plus':'minus'}">${x.a>0?'+':'−'}${won(Math.abs(x.a))}</td>
+    <td class="r" style="color:var(--muted)">${won(x.b)}</td>
+  </tr>`).join('') + '</tbody>';
+$('ledgerToggle').textContent = `전체 내역 ${D.ledger.length}건 펼치기`;
+
+}
+render();
+
+/* ------------------------------------------------------------------
+   데이터 출처 (위에서부터 순서대로 시도, 하나라도 성공하면 그 값으로 갱신)
+     1) SHEET_API  구글시트 Apps Script 웹앱 — 항상 최신. 아래에 /exec 주소를 넣으면 활성화
+     2) data.json  같은 폴더의 파일 — 시트에서 깃허브로 배포한 경우
+     3) 내장 데이터 — 둘 다 실패해도 화면은 그대로 뜬다
+   ------------------------------------------------------------------ */
+const SHEET_API = 'https://script.google.com/macros/s/AKfycbybG8fHsF_lEiaJsfBvvOkyMC_GT4o23vOXndxZUPZTdSHie98/exec';
+
+(async () => {
+  const status = $('src');
+  for (const [url, label] of [[SHEET_API, '구글시트 실시간'], ['data.json', '저장된 데이터']]) {
+    if (!url) continue;
+    try {
+      const r = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now());
+      if (!r.ok) continue;
+      const d = await r.json();
+      if (!d || !d.grid) continue;
+      D = d; render();
+      status.textContent = label + ' · ' + d.asof.replace(/-/g, '.');
+      return;
+    } catch (e) { /* 다음 출처로 */ }
+  }
+  status.textContent = '내장 데이터';
+})();
+
+/* 툴팁 */
+const tip = $('tip');
+document.addEventListener('mouseover', e=>{
+  const t = e.target.closest('[data-tip]');
+  if(!t) return;
+  tip.textContent = t.dataset.tip; tip.style.opacity = 1;
+});
+document.addEventListener('mousemove', e=>{
+  if(tip.style.opacity == 0) return;
+  const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8);
+  tip.style.left = x + 'px';
+  tip.style.top = (e.clientY - tip.offsetHeight - 10) + 'px';
+});
+document.addEventListener('mouseout', e=>{
+  if(e.target.closest('[data-tip]')) tip.style.opacity = 0;
+});
+</script>
+
+</body>
+</html>
