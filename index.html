@@ -309,6 +309,15 @@ $('kpis').innerHTML = [
   {t:'미납 총액', v:won(D.due)+'원', f:'이월분 포함', c:'is-alert'}
 ].map(k=>`<div class="kpi ${k.c||''}"><dt>${k.t}</dt><dd class="num">${k.v}</dd><div class="foot">${k.f}</div></div>`).join('');
 
+/* 어떤 형태로 오든 MM-DD 로 정리 */
+function mmdd(v){
+  if(!v) return '';
+  if(/^\d{2}-\d{2}$/.test(v)) return v;
+  const d = new Date(v);
+  if(isNaN(d)) return String(v);
+  return String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
 /* 납부 그리드 */
 let head = '<thead><tr><th class="unit">호수</th>';
 for(let m=1;m<=12;m++) head += `<th>${m}월</th>`;
@@ -316,7 +325,8 @@ head += '<th style="text-align:right;padding-right:8px">미납액</th></tr></the
 let body = '<tbody>';
 D.grid.forEach(g=>{
   body += `<tr><th class="unit">${g.u}</th>`;
-  g.cells.forEach((c,i)=>{
+  g.cells.forEach((raw,i)=>{
+    const c = mmdd(raw);
     const m = i+1;
     if(c) body += `<td class="paid" data-tip="${g.u} ${m}월 · ${c} 입금">${c}</td>`;
     else if(m<=curMon) body += `<td class="unpaid" data-tip="${g.u} ${m}월 · 미납">미납</td>`;
