@@ -246,8 +246,8 @@
 
   <section class="two">
     <div>
-      <h2>세대별 미납액</h2>
-      <p class="sub">이전 연도 이월분을 포함한 금액입니다.</p>
+      <h2>세대별 미납액 (2026년)</h2>
+      <p class="sub">2026년분만 표시합니다. 이전 연도 이월분은 제외했습니다.</p>
       <div class="card"><div class="bars" id="dueBars"></div></div>
     </div>
     <div>
@@ -300,13 +300,23 @@ const [Y,M,DD] = D.asof.split('-').map(Number);
 $('asof').textContent = `${Y}년 ${M}월 ${DD}일`;
 const curMon = M;
 
+/* 2026년(당해 연도) 미납액만 산출 — 이전 연도 이월분 제외 */
+const FEE = Number(D.fee) || 15000;
+function dueYear(g){
+  if(g && Number.isFinite(Number(g.carry))) return Math.max(0, Number(g.due) - Number(g.carry));
+  let n = 0;
+  (g.cells||[]).forEach((c,i)=>{ if(!c && i+1 <= curMon) n++; });
+  return n * FEE;
+}
+const dueTotalYear = D.grid.reduce((a,g)=>a+dueYear(g), 0);
+
 /* KPI */
 const net = D.income - D.expense;
 $('kpis').innerHTML = [
   {t:'통장 잔액', v:won(D.balance)+'원', f:`은행 잔액과 일치 확인`, c:'is-accent'},
   {t:'1~8월 수입', v:won(D.income)+'원', f:'관리비 · 예금이자'},
   {t:'1~8월 지출', v:won(D.expense)+'원', f:'청소비 · 정화조 · 전기세'},
-  {t:'미납 총액', v:won(D.due)+'원', f:'이월분 포함', c:'is-alert'}
+  {t:`${Y}년 미납액`, v:won(dueTotalYear)+'원', f:'이월분 제외 · 당해 연도분만', c:'is-alert'}
 ].map(k=>`<div class="kpi ${k.c||''}"><dt>${k.t}</dt><dd class="num">${k.v}</dd><div class="foot">${k.f}</div></div>`).join('');
 
 /* 어떤 형태로 오든 MM-DD 로 정리 */
@@ -332,12 +342,13 @@ D.grid.forEach(g=>{
     else if(m<=curMon) body += `<td class="unpaid" data-tip="${g.u} ${m}월 · 미납">미납</td>`;
     else body += `<td class="idle" data-tip="${g.u} ${m}월 · 아직 납부월이 아닙니다">·</td>`;
   });
-  body += `<td class="owed ${g.due?'has':'zero'}">${g.due?won(g.due):'—'}</td></tr>`;
+  const dy = dueYear(g);
+  body += `<td class="owed ${dy?'has':'zero'}">${dy?won(dy):'—'}</td></tr>`;
 });
 $('grid').innerHTML = head + body + '</tbody>';
 
 /* 미납 막대 */
-const dues = D.grid.map(g=>({k:g.u, v:g.due})).sort((a,b)=>b.v-a.v);
+const dues = D.grid.map(g=>({k:g.u, v:dueYear(g)})).sort((a,b)=>b.v-a.v);
 const dMax = Math.max(...dues.map(d=>d.v), 1);
 $('dueBars').innerHTML = dues.map(d=>`
   <div class="bar-row ${d.v?'':'zero'}">
