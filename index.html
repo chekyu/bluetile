@@ -116,6 +116,10 @@
   .kpi dt{font-size:12.5px; color:var(--muted); margin:0 0 6px; letter-spacing:.02em}
   .kpi dd{margin:0; font-size:26px; font-weight:500; letter-spacing:-.02em}
   .kpi .foot{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.45}
+  .kpi .foot-period{display:block}
+  .kpi .narrow-only{display:none}
+  .kpi .foot-row{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
+  .kpi .foot-row b{font-weight:400; color:var(--ink-2); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
   .kpi.is-alert dd{color:var(--alert)}
 
   /* ---- payment grid ---- */
@@ -153,6 +157,8 @@
     .kpi dd{font-size:18px; letter-spacing:-.03em; white-space:nowrap}
     .kpi dt{font-size:11.5px}
     .kpi .foot{font-size:11px}
+    .kpi .narrow-only{display:block}
+    .kpi .wide-note{display:none}
   }
   .bars{display:flex; flex-direction:column; gap:11px; margin-top:4px}
   .bar-row{display:grid; grid-template-columns:56px 1fr auto; align-items:center; gap:12px}
@@ -216,7 +222,7 @@
   <div class="wrap">
     <p class="eyebrow">청기와빌라 관리비</p>
     <h1>2026년 관리비 현황</h1>
-    <p class="asof">기준일 <b id="asof">—</b> · 세대당 월 관리비 <b>15,000원</b> · 11세대<br><span class="src">데이터 <span id="src">불러오는 중…</span></span></p>
+    <p class="asof">기준일 <b id="asof">—</b><br>· 세대당 월 관리비 <b>15,000원</b> · 11세대<br><span class="src">데이터 <span id="src">불러오는 중…</span></span></p>
   </div>
 </header>
 
@@ -241,7 +247,7 @@
 
   <section>
     <h2>세대별 납부 현황</h2>
-    <p class="sub">칸의 숫자는 입금이 확인된 날짜입니다. 입금액은 밀린 달부터 순서대로 채워집니다.</p>
+    <p class="sub">칸의 숫자는 입금이 확인된 날짜입니다.<br>입금액은 밀린 달부터 순서대로 채워집니다.</p>
     <div class="card">
       <div class="scroll"><table class="grid" id="grid"></table></div>
       <div class="legend">
@@ -261,14 +267,12 @@
     </div>
     <div>
       <h2>지출 구성</h2>
-      <p class="sub" id="catPeriod">누계.</p>
       <div class="card"><div class="bars" id="catBars"></div></div>
     </div>
   </section>
 
   <section>
     <h2>월별 수입 · 지출</h2>
-    <p class="sub">청소비는 두 달치를 한 번에 내보내기 때문에 홀수 달마다 큰 지출이 잡힙니다.</p>
     <div class="card">
       <div class="legend" style="margin:0 0 10px">
         <span><i class="swatch" style="background:var(--accent)"></i>수입</span>
@@ -281,7 +285,7 @@
 
   <section>
     <h2>거래 내역</h2>
-    <p class="sub">통장에 찍힌 그대로입니다. 입금자 이름 대신 호수로 표시했습니다.</p>
+    <p class="sub">통장에 찍힌 그대로입니다.<br>입금자 이름 대신 호수로 표시했습니다.</p>
     <div class="card">
       <details>
         <summary id="ledgerToggle">전체 내역 펼치기</summary>
@@ -327,8 +331,11 @@ const dueTotalYear = D.grid.reduce((a,g)=>a+dueYear(g), 0);
 /* KPI */
 const net = D.income - D.expense;
 $('kpis').innerHTML = [
-  {t:'통장 잔액', v:won(D.balance)+'원',
-   f:`1~${curMon}월 수입 ${won(D.income)} · 지출 ${won(D.expense)}`, c:'is-accent'},
+  {t:'통장 잔액', v:won(D.balance)+'원', c:'is-accent',
+   f:`<span class="wide-note">은행 잔액과 일치 확인</span>`
+   + `<span class="narrow-only"><span class="foot-period">1월부터 ${curMon}월까지</span>`
+   + `<span class="foot-row"><span>수입</span><b class="num">${won(D.income)}원</b></span>`
+   + `<span class="foot-row"><span>지출</span><b class="num">${won(D.expense)}원</b></span></span>`},
   {t:`1~${curMon}월 수입`, v:won(D.income)+'원', f:'관리비 · 예금이자', c:'wide-only'},
   {t:`1~${curMon}월 지출`, v:won(D.expense)+'원', f:'청소비 · 정화조 · 전기세', c:'wide-only'},
   {t:`${Y}년 미납액`, v:won(dueTotalYear)+'원', f:'이월분 제외', c:'is-alert'}
@@ -385,7 +392,6 @@ $('dueBars').innerHTML = dues.map(d=>`
   </div>`).join('');
 
 /* 지출 구성 */
-$('catPeriod').textContent = `1월 ~ ${curMon}월 누계.`;
 const cats = Object.entries(D.bycat).sort((a,b)=>b[1]-a[1]);
 const cMax = Math.max(...cats.map(c=>c[1]));
 $('catBars').innerHTML = cats.map(([k,v])=>`
