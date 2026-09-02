@@ -132,6 +132,7 @@
   }
   td.paid{background:var(--accent-soft); color:var(--accent-ink)}
   td.unpaid{background:var(--alert-soft); color:var(--alert-ink); font-family:inherit; font-size:11.5px}
+  td.vacant{background:var(--idle); color:var(--muted); font-family:inherit; font-size:11.5px}
   td.idle{background:var(--idle); color:var(--muted)}
   td.owed{
     font-family:"IBM Plex Mono",monospace; font-size:12px; text-align:right;
@@ -240,6 +241,7 @@
         <span><i class="swatch" style="background:var(--accent-soft);border:1px solid var(--accent)"></i>납부 완료</span>
         <span><i class="swatch" style="background:var(--alert-soft);border:1px solid var(--alert)"></i>미납</span>
         <span><i class="swatch" style="background:var(--idle);border:1px solid var(--line-2)"></i>납부월 도래 전</span>
+        <span><i class="swatch" style="background:var(--idle);border:1px solid var(--line-2)"></i>공실 (부과 없음)</span>
       </div>
     </div>
   </section>
@@ -300,12 +302,17 @@ const [Y,M,DD] = D.asof.split('-').map(Number);
 $('asof').textContent = `${Y}년 ${M}월 ${DD}일`;
 const curMon = M;
 
-/* 2026년(당해 연도) 미납액만 산출 — 이전 연도 이월분 제외 */
+/* 공실 예외 — 관리비를 물리지 않는 달. 호수: [월, ...] */
+const VACANT = { '103호': [8] };
+const isVacant = (u,m) => (VACANT[u]||[]).includes(m);
+
+/* 당해 연도 미납액만 산출 — 이전 연도 이월분 제외, 공실월 제외 */
 const FEE = Number(D.fee) || 15000;
 function dueYear(g){
-  if(g && Number.isFinite(Number(g.carry))) return Math.max(0, Number(g.due) - Number(g.carry));
   let n = 0;
-  (g.cells||[]).forEach((c,i)=>{ if(!c && i+1 <= curMon) n++; });
+  for(let m=1; m<=curMon; m++){
+    if(!g.cells[m-1] && !isVacant(g.u, m)) n++;
+  }
   return n * FEE;
 }
 const dueTotalYear = D.grid.reduce((a,g)=>a+dueYear(g), 0);
@@ -338,7 +345,8 @@ D.grid.forEach(g=>{
   g.cells.forEach((raw,i)=>{
     const c = mmdd(raw);
     const m = i+1;
-    if(c) body += `<td class="paid" data-tip="${g.u} ${m}월 · ${c} 입금">${c}</td>`;
+    if(isVacant(g.u, m)) body += `<td class="vacant" data-tip="${g.u} ${m}월 · 공실 (관리비 부과 없음)">공실</td>`;
+    else if(c) body += `<td class="paid" data-tip="${g.u} ${m}월 · ${c} 입금">${c}</td>`;
     else if(m<=curMon) body += `<td class="unpaid" data-tip="${g.u} ${m}월 · 미납">미납</td>`;
     else body += `<td class="idle" data-tip="${g.u} ${m}월 · 아직 납부월이 아닙니다">·</td>`;
   });
